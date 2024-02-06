@@ -3,6 +3,9 @@ package com.example.codealpha_flashcardapp.presentations.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,8 +31,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -37,39 +39,48 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.codealpha_flashcardapp.R
 import com.example.codealpha_flashcardapp.operations.data_mangment.FlashCard
+import com.example.codealpha_flashcardapp.presentations.viewModels.QuizViewModel
 import com.example.codealpha_flashcardapp.ui.theme.Primary
 import com.example.codealpha_flashcardapp.ui.theme.Transparent_50
+import com.example.codealpha_flashcardapp.ui.theme.getColorFromGallery
 
 
-val FlashCard = FlashCard(id = 0 , question = "are you good developer?", answer = "Yes", Deck_id = 1, hasOptions = false, options = emptyList())
-var FlashCard2 = FlashCard(id = 1 , question = "Whats your name?", answer = "mostafa", Deck_id = 1, hasOptions = true, options = listOf("jena", "nema", "ali"))
 
 
 @Composable
-fun QuizScreen(navController: NavController) {
+fun QuizScreen(navController: NavController, deckId: Int?=null) {
+
+    val quizViewModel:QuizViewModel= hiltViewModel()
+    quizViewModel.passDeckId(deckId)
+    val deck = quizViewModel.deck.collectAsState()
+
+    val quizCards = quizViewModel.quizCards.collectAsState()
+    quizViewModel.onQuizCardsReady()
+
+    val cardAnimation = quizViewModel.cardAnimationState.collectAsState()
+    val onScreenCard = quizViewModel.onScreenCard.collectAsState()
+    val score = quizViewModel.score.collectAsState()
+    val finalScoreVisibility = quizViewModel.finalScoreVisibility.collectAsState()
+
+
 
     // replace with the score mutable state
-    val score = remember {
-        mutableIntStateOf(0)
-    }
 
     // replace background color with the deck color
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Primary)
+            .background(getColorFromGallery(deck.value.bg_color))
             .padding(top = 25.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
     ) {
         Row(
@@ -78,13 +89,16 @@ fun QuizScreen(navController: NavController) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             //replace with Deck title
-            Text(
-                text = "Score:${score.value}",
-                style = TextStyle(
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
+            AnimatedVisibility(visible = !finalScoreVisibility.value) {
+                Text(
+                    text = "Score:${score.value}",
+                    style = TextStyle(
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 )
-            )
+            }
+
             IconButton(onClick = {
                 navController.popBackStack()
             }) {
@@ -102,10 +116,21 @@ fun QuizScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            QuizCardItem(
-                flashCard = FlashCard,
-            )
+            AnimatedVisibility(
+                visible = cardAnimation.value,
+                enter = slideInHorizontally(initialOffsetX = {it}),
+                exit = slideOutHorizontally (targetOffsetX = {-it})
+            ) {
+                QuizCardItem(
+                    flashCard = onScreenCard.value,
+                    quizViewModel = quizViewModel
+                )
+            }
 
+
+            AnimatedVisibility(visible = finalScoreVisibility.value) {
+                HeadLineTxt(value = "${score.value} correct of ${quizCards.value.size}")
+            }
         }
 
 
@@ -114,7 +139,7 @@ fun QuizScreen(navController: NavController) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuizCardItem(flashCard: FlashCard) {
+fun QuizCardItem(flashCard: FlashCard, quizViewModel: QuizViewModel) {
 
     Column(
         modifier = Modifier
@@ -132,10 +157,8 @@ fun QuizCardItem(flashCard: FlashCard) {
             modifier= Modifier.padding(8.dp)
         )
 
+        val answerTxt = remember { mutableStateOf("") }
         AnimatedVisibility(visible = !flashCard.hasOptions, enter = fadeIn(tween(1000))) {
-            val answerTxt = remember {
-                mutableStateOf("")
-            }
             OutlinedTextField(
                 value = answerTxt.value,
                 onValueChange = { answerTxt.value = it },
@@ -155,14 +178,11 @@ fun QuizCardItem(flashCard: FlashCard) {
         }
 
 
-
+        val selectedOption = remember { mutableStateOf("") }
         AnimatedVisibility(
             visible = flashCard.hasOptions,
             enter = fadeIn(tween(1000))) {
             if(flashCard.options.isNotEmpty()){
-                val s: String =flashCard.options[0]
-                val selectedOption = remember { mutableStateOf("") }
-
                 Column(
                     modifier = Modifier.padding(8.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -189,7 +209,12 @@ fun QuizCardItem(flashCard: FlashCard) {
         }
 
         OutlinedButton(
-            onClick = {},
+            onClick = {
+                      when(flashCard.hasOptions){
+                          true -> {quizViewModel.passCard(selectedOption.value,flashCard)}
+                          false -> {quizViewModel.passCard(answerTxt.value,flashCard)}
+                      }
+            },
             modifier = Modifier
                 .padding(top = 16.dp)
                 .shadow(2.dp, shape = RoundedCornerShape(10)),
@@ -199,7 +224,7 @@ fun QuizCardItem(flashCard: FlashCard) {
             ),
         ) {
             Text(
-                text = stringResource(id = R.string.submit), style = TextStyle(
+                text = stringResource(id = R.string.pass), style = TextStyle(
                     fontSize = 24.sp, fontWeight = FontWeight.Bold
                 )
             )

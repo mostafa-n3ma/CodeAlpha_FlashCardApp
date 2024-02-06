@@ -20,6 +20,9 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE id = :userId")
     fun getUserById(userId: Int): User?
 
+    @Query("SELECT * FROM users WHERE email = :email")
+    fun getUserByEmail(email:String):User?
+
     @Insert
     fun insertUser(user: User)
 
@@ -51,10 +54,13 @@ interface DeckDao {
 @Dao
 interface FlashCardDao {
     @Query("SELECT * FROM flashcards")
-    fun getAllFlashCards(): List<FlashCard>
+    fun getAllFlashCards(): LiveData<List<FlashCard>>
 
     @Query("SELECT * FROM flashcards WHERE id = :flashCardId")
     fun getFlashCardById(flashCardId: Int): FlashCard?
+
+    @Query("SELECT * FROM flashcards WHERE Deck_id = :deckId")
+    fun getFlashCardByDeckId(deckId:Int):List<FlashCard>
 
     @Insert
     fun insertFlashCard(flashCard: FlashCard)

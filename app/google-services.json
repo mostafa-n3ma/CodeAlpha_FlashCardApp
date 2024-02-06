@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "291994798073",
+    "project_id": "flashcardsapp-e7993",
+    "storage_bucket": "flashcardsapp-e7993.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:291994798073:android:8be587f808b53e7ef89f28",
+        "android_client_info": {
+          "package_name": "com.example.codealpha_flashcardapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClsfn97tzBm5B5Afgd2HtIe6g7SR2hBss"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -73,6 +73,15 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
+//    bottomSheet
+    implementation ("androidx.compose.material:material:1.5.4")
+    implementation ("androidx.compose.ui:ui-tooling-preview:1.5.4")
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    implementation( "androidx.activity:activity-compose:1.8.1")
+
+
+
+
 
     //Navigation
     implementation("androidx.navigation:navigation-compose:2.7.6")
@@ -83,7 +92,12 @@ dependencies {
     //Hilt
     implementation("com.google.dagger:hilt-android:2.50")
     kapt("com.google.dagger:hilt-android-compiler:2.50")
-    implementation("androidx.hilt:hilt-navigation-fragment:1.1.0")
+//    implementation("androidx.hilt:hilt-navigation-fragment:1.1.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
+
+
+
+
 
 
     //Room
@@ -104,6 +118,9 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.1"))
     implementation("com.google.firebase:firebase-auth")
 
+
+    //liveData
+    implementation("androidx.compose.runtime:runtime-livedata:1.6.0")
 
 }
 

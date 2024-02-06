@@ -1,5 +1,10 @@
 package com.example.codealpha_flashcardapp.presentations.screens
 
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.OnBackPressedDispatcherOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,12 +29,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -48,15 +57,47 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.codealpha_flashcardapp.MainActivity
 import com.example.codealpha_flashcardapp.R
 import com.example.codealpha_flashcardapp.presentations.AppDestinations
+import com.example.codealpha_flashcardapp.presentations.viewModels.AuthViewModel
 import com.example.codealpha_flashcardapp.ui.theme.Primary
 import com.example.codealpha_flashcardapp.ui.theme.TextColor
-import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignInScreen(navController: NavController, authStatus: FirebaseAuth) {
+fun SignInScreen(navController: NavController, authViewModel: AuthViewModel? = null) {
+    OnBackButtonClicked()
+
+
+
+    val announcement = authViewModel!!.announceMessage.collectAsState()
+    Log.d("announcment test", "SignInScreen:announsment state value:${announcement.value} ")
+    when (announcement.value) {
+        "" -> {}
+        else -> {
+            Log.d("announcment test", "SignInScreen: announcment: ${announcement.value}")
+            Toast.makeText(LocalContext.current, announcement.value, Toast.LENGTH_SHORT).show()
+            authViewModel.announceMessage("")
+        }
+    }
+
+
+    val userIsSignedIn = authViewModel.isUserSignedIn.collectAsState()
+    if (userIsSignedIn.value){
+        navController.navigate(AppDestinations.HomeScreen.name)
+    }
+
+
+
+    val email = remember {
+        mutableStateOf("")
+    }
+
+    val password = remember {
+        mutableStateOf("")
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -70,22 +111,51 @@ fun SignInScreen(navController: NavController, authStatus: FirebaseAuth) {
         Spacer(modifier = Modifier.height(16.dp))
         EditTextField(
             labelValue = stringResource(R.string.email),
-            icon = painterResource(id = R.drawable.email)
+            icon = painterResource(id = R.drawable.email),
+            email
         )
         PasswordTextField(
             labelValue = stringResource(id = R.string.paswword),
-            icon = painterResource(id = R.drawable.password)
+            icon = painterResource(id = R.drawable.password),
+            password
         )
         Spacer(modifier = Modifier.height(20.dp))
+
+
         ComposableButton(value = stringResource(id = R.string.sign_in), onClick = {
-            // use the navController
-            navController.navigate(AppDestinations.HomeScreen.name)
+            authViewModel.signIn(email.value, password.value)
         })
+
+
+
+
         AnnotatedTextCreateAccount(onclick = {
             navController.navigate(AppDestinations.SignUpScreen.name)
         })
 
     }
+}
+
+@Composable
+fun OnBackButtonClicked() {
+    val context = LocalContext.current
+    val backDispatcher: OnBackPressedDispatcherOwner? = LocalOnBackPressedDispatcherOwner.current
+    val backCallBack = remember {
+        object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                (context as MainActivity).finish()
+            }
+        }
+    }
+    if (backDispatcher != null) {
+        DisposableEffect(backDispatcher) {
+            backDispatcher.onBackPressedDispatcher.addCallback(backCallBack)
+            onDispose {
+                backCallBack.remove()
+            }
+        }
+    }
+
 }
 
 @Composable
@@ -97,19 +167,22 @@ fun AnnotatedTextCreateAccount(onclick: () -> Unit) {
     val annotatedString = buildAnnotatedString {
         append(dontHaveAccountTxt)
         append(" ")
-        withStyle(SpanStyle(color = Primary)){
+        withStyle(SpanStyle(color = Primary)) {
             pushStringAnnotation(tag = creatAccountTxt, annotation = creatAccountTxt)
             append(creatAccountTxt)
         }
     }
 
     ClickableText(
-        modifier = Modifier.fillMaxWidth().wrapContentSize(Alignment.Center).padding(top = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentSize(Alignment.Center)
+            .padding(top = 8.dp),
         text = annotatedString,
-        onClick = {offset->
-            annotatedString.getStringAnnotations(offset,offset)
-                .firstOrNull()?.also { span->
-                    if (span.tag == creatAccountTxt){
+        onClick = { offset ->
+            annotatedString.getStringAnnotations(offset, offset)
+                .firstOrNull()?.also { span ->
+                    if (span.tag == creatAccountTxt) {
                         onclick()
                     }
                 }
@@ -133,10 +206,7 @@ fun ComposableButton(value: String, onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PasswordTextField(labelValue: String, icon: Painter) {
-    val password = remember {
-        mutableStateOf("")
-    }
+fun PasswordTextField(labelValue: String, icon: Painter, password: MutableState<String>) {
 
     val passwordVisible = remember {
         mutableStateOf(false)
@@ -184,14 +254,10 @@ fun PasswordTextField(labelValue: String, icon: Painter) {
 
 @ExperimentalMaterial3Api
 @Composable
-fun EditTextField(labelValue: String, icon: Painter) {
-    val text = remember {
-        mutableStateOf("")
-    }
-
+fun EditTextField(labelValue: String, icon: Painter, editableTxt: MutableState<String>) {
     OutlinedTextField(
-        value = text.value,
-        onValueChange = { text.value = it },
+        value = editableTxt.value,
+        onValueChange = { editableTxt.value = it },
         modifier = Modifier.fillMaxWidth(),
         label = { Text(text = labelValue) },
         colors = TextFieldDefaults.outlinedTextFieldColors(
@@ -216,7 +282,7 @@ fun EditTextField(labelValue: String, icon: Painter) {
 @Preview
 @Composable
 fun SignInPreview() {
-    SignInScreen(navController = rememberNavController(), authStatus = authStatus)
+    SignInScreen(navController = rememberNavController())
 }
 
 @Composable
