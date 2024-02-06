@@ -66,6 +66,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.codealpha_flashcardapp.R
 import com.example.codealpha_flashcardapp.operations.data_mangment.Deck
+import com.example.codealpha_flashcardapp.operations.data_mangment.FlashCard
 import com.example.codealpha_flashcardapp.presentations.AppDestinations
 import com.example.codealpha_flashcardapp.presentations.viewModels.AuthViewModel
 import com.example.codealpha_flashcardapp.presentations.viewModels.HomeViewModel
@@ -222,6 +223,12 @@ fun HomeScreenBase(
     }
 
     val activeUserName = homeViewModel.activeUserName.collectAsState()
+
+    // all cards for filtering and counting
+    val cards: State<List<FlashCard>?> = homeViewModel._flashCards.observeAsState()
+    Log.d("cards", "HomeScreenMain:cards: ${cards.value?.size} ")
+
+
     OnBackButtonClicked()
     Box(
         modifier = Modifier.fillMaxSize()
@@ -272,11 +279,16 @@ fun HomeScreenBase(
                 verticalArrangement = Arrangement.spacedBy(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                //allCards.value.filter { it.Deck_id == deck.id }.size
                 if (decksList.value != null) {
                     items(decksList.value!!) { deck ->
                         DeckItemCard(
                             title = deck.title,
-                            cards_count = 0,
+                            cards_count = if (cards.value != null){
+                                 homeViewModel.getDeckCardsCount(deck.id,cards.value!!)
+                            } else{
+                                  0
+                            },
                             color = getColorFromGallery(deck.bg_color),
                             onClick = {
                                 navController.navigate("${AppDestinations.DeckDetailsScreen.name}/${deck.id}")

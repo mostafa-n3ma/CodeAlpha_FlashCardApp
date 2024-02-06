@@ -1,12 +1,10 @@
 package com.example.codealpha_flashcardapp.presentations.viewModels
 
-import android.provider.ContactsContract.CommonDataKinds.Email
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.codealpha_flashcardapp.operations.data_mangment.AppRepository
 import com.example.codealpha_flashcardapp.operations.data_mangment.Deck
+import com.example.codealpha_flashcardapp.operations.data_mangment.FlashCard
 import com.example.codealpha_flashcardapp.operations.data_mangment.User
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -30,8 +28,12 @@ constructor(private val repository: AppRepository) : ViewModel() {
 
      val _decksList=repository.getAllDecks()
 
+    val _flashCards = repository.getAllFlashCards()
 
 
+    fun getDeckCardsCount(deckId: Int, allCards: List<FlashCard>): Int {
+        return allCards.filter { it.Deck_id == deckId }.size ?: 0
+    }
 
     fun getUserName(email: String){
         viewModelScope.launch(Dispatchers.Default) {

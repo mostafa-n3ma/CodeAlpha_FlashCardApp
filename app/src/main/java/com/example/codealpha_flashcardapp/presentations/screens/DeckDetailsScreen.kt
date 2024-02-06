@@ -1,6 +1,7 @@
 package com.example.codealpha_flashcardapp.presentations.screens
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -67,8 +68,10 @@ import androidx.compose.material.BottomSheetValue
 import androidx.compose.material.Checkbox
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
+import androidx.compose.runtime.State
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import com.example.codealpha_flashcardapp.operations.data_mangment.Deck
 import com.example.codealpha_flashcardapp.operations.data_mangment.FlashCard
 import com.example.codealpha_flashcardapp.ui.theme.LightGray
@@ -260,8 +263,8 @@ fun DeckDetailsScreenBase(
 ) {
 
 
-    val cards = deckDetailsViewModel!!._flashCards.observeAsState()
-    Log.d("DeckDetails", "DeckDetailsMain:cards: ${cards.value} ")
+    val cards: State<List<FlashCard>?> = deckDetailsViewModel!!._flashCards.observeAsState()
+    Log.d("cards", "DeckDetailsMain:cards: ${cards.value} ")
 
 
     // replace background color with the deck color
@@ -313,9 +316,14 @@ fun DeckDetailsScreenBase(
             )
 
 
+            val context= LocalContext.current
             QuizButton(value = stringResource(id = R.string.start_quiz),
                 onClick = {
-                    navController.navigate("${AppDestinations.QuizScreen.name}/${deck.id}")
+                    if (cards.value!!.size > 1){
+                        navController.navigate("${AppDestinations.QuizScreen.name}/${deck.id}")
+                    }else{
+                        Toast.makeText(context,"create Cards First",Toast.LENGTH_SHORT).show()
+                    }
                 })
 
             Spacer(
