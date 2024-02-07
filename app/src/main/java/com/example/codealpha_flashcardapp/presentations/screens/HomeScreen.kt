@@ -175,6 +175,8 @@ fun NewDeckBottomSheet(onDonClicked: () -> Unit) {
         ComposableButton(value = "Done", onClick = {
             homeViewModel.addNewDeck(title.value, description.value)
             onDonClicked()
+            title.value = ""
+            description.value = ""
         })
 
 
@@ -359,9 +361,8 @@ fun DeckItemCard(
     ) {
         Text(
             modifier = Modifier
-                .padding(8.dp)
+                .padding(top = 8.dp, start = 8.dp)
                 .widthIn(max = 300.dp)
-                .heightIn(max = 25.dp)
                 .align(Alignment.TopStart),
             text = title,
             style = TextStyle(

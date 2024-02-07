@@ -246,6 +246,12 @@ fun NewCardBottomSheet(onDonClicked: () -> Unit, deckDetailsViewModel: DeckDetai
             onClick = {
                 deckDetailsViewModel.createNewCard(question.value,answer.value,hasOptions_state.value,option1.value,option2.value,option3.value)
                 onDonClicked()
+                question.value = ""
+                answer.value = ""
+                hasOptions_state.value = false
+                option1.value = ""
+                option2.value = ""
+                option3.value = ""
             })
 
 
